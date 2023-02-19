@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {{ block.super }}|Вход
+{% endblock %}
+
+{% block content %}
+    {% include 'inc/show_message.html' %}
+    <div class="container col-xl-10 col-xxl-8 px-4 py-5">
+        <div class="row align-items-center g-lg-5 py-5">
+            <div class="col-lg-7 text-center text-lg-start">
+                <h1 class="text-center display-4 fw-bold">RENOVA</h1>
+                <p class="text-center lead mb-4">Качество и гарантии сервисного обслуживания должны превосходить ожидания
+                    потребителей, что обеспечивает закрепление положительной оценки покупателями предприятия-изготовителя
+                    и его товара, позволяет продлить контакты с ним до следующей покупки
+                </p>
+            </div>
+            <div class="col-md-10 mx-auto col-lg-5">
+                <form method="post" class="p-4 p-md-5 border border-primary rounded-3 bg-light">
+                    {% csrf_token %}
+                    <div class="form-floating mb-3">
+                        {{ form.username }}
+                        <label>Имя пользователя</label>
+                        <div class="invalid-feedback">
+                            {{ form.username.errors }}
+                        </div>
+                    </div>
+                    <div class="form-floating mb-3">
+                        {{ form.password }}
+                        <label>Пароль</label>
+                        <div class="invalid-feedback">
+                            {{ form.password.errors }}
+                        </div>
+                    </div>
+                    <div class="checkbox mb-3">
+                        <label>
+                            {{ form.non_field.errors }}
+                           <!--  <input type="checkbox" value="remember-me"> Remember me --!>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="w-100 btn btn-lg btn-primary" type="submit">Вход</button>
+                    <hr class="my-4">
+                    <button type="button" class="w-100 btn btn-outline-secondary btn-sm px-4" href="#">Регистрация</button>
+                    <!--
+                    <p class="text-muted text-center">By clicking Sign up, you agree to the terms of use.</p>
+                    --!>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

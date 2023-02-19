@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container col-md-10">
+    <main>
+        <div class="row py-4 justify-content-between">
+            <div class="col-6"><h3>Доступные для загрузки файлы</h3></div>
+
+            <div class="col-6 text-end">
+                <form method="post" action="{% url 'products_move_page' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    {{ add_form.errors }}
+                    <div class="row justify-content-end">
+                        <div class="col-9">{{ add_form.files }}</div>
+                        {% if not files %}
+                        <input class="col-3 btn btn-primary" type="submit" value="Загрузить">
+                        {% else %}
+                        <input class="col-3 btn btn-outline-primary" type="submit" value="Загрузить">
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% if files %}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row justify-content-center">
+                    <label class="col-xl-2 col-form-label">Тип продукции</label>
+                    <div class="col-xl-3">{{ form.product }}</div>
+                    <label class="col-xl-2 col-form-label">Завод-изготовитель</label>
+                    <div class="col-xl-2">{{ form.shop }}</div>
+                    <input class="col-1 btn btn-primary" type="submit" value="Загрузить">
+                </div>
+            </form>
+            <div class="container col-sm-8 pt-3">
+                <ul>
+                {% for file in files %}
+                    <li>{{ file }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+
+
+            <!-- кнопка ВВЕРХ !-->
+            {% include 'inc/go_to_top_button.html' %}
+        {% else %}
+        <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+        {% endif %}
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|Главная
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container">
+    <main>
+        <div class="row py-4">
+            <div class="col-12"><h3>{{ title }}</h3></div>
+        </div>
+
+        <div class="row g-5">
+            <div class="col-lg-4  order-lg-last">
+                <h4 class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-primary">Найдено отчетов</span>
+                    <span class="badge bg-primary rounded-pill">{{ obj_count }}</span>
+                </h4>
+                <form class="card p-2" method="get">
+                    {% if request.user.is_superuser or request.user|has_group:"GeneralStaff" %}
+                    <div class="row mb-3  align-items-center">
+                        <label class="col-xl-4 col-form-label">Сервис</label>
+                        <div class="col-xl-8">
+                            {{ form.service_center }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="row mb-3  align-items-center">
+                        <label class="col-xl-4 col-form-label">Отч. период</label>
+                        <div class="col-xl-1">
+                            {{ form.use_date }}
+                        </div>
+                        <div class="col-xl-4">
+                            {{ form.month }}
+                        </div>
+                        <div class="col-xl-3  align-items-center">
+                            {{ form.year }}
+                        </div>
+                    </div>
+                    <div class="row mb-3  align-items-center">
+                        <label class="col-xl-4">Статус</label>
+                        <div class="col-xl-1">
+                            {{ form.use_status }}
+                        </div>
+                        <div class="col-xl-7">
+                            {{ form.status }}
+                        </div>
+                    </div>
+                    {% if request.user.is_superuser or request.user|has_group:"GeneralStaff" %}
+                    <div class="row mb-3  align-items-center">
+                        <label class="col-xl-4">Менеджер</label>
+                        <div class="col-xl-8">
+                            {{ form.staff_user }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="container d-flex justify-content-center gap-2">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i>
+                            выбрать
+                        </button>
+                        <a class="btn btn-outline-primary" href="{% url 'reports_list' %}" role="button">
+                            <i class="bi bi-x-lg"></i>
+                            сбросить
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-8">
+                {% if reports %}
+                {% for report in reports %}
+                    {% if report.status == 'send' %}
+                    {% show_report_header_for_staff report False %}
+                    {% else %}
+                    {% show_report_header_for_staff report True %}
+                    {% endif %}
+                {% endfor %}
+                {% else %}
+                <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+                {% endif %}
+            </div>
+        </div>
+        {% if reports %}
+        <!-- кнопка ВВЕРХ --!>
+        {% include 'inc/go_to_top_button.html' %}
+        {% endif %}
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

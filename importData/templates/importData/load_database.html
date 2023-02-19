@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+
+{% block title %}
+    {{ block.super }}|'load'
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+    {% include 'inc/staff_navbar.html' %}
+{% else %}
+    {% include 'inc/user_navbar.html' %}
+{% endif %}
+
+{% load static %}
+
+<main class="container-sm col-6 d-flex flex-column mt-5 align-items-center">
+
+    <div class="input-group mb-1">
+        <input type="file" class="form-control" id="inputFile">
+        <label class="input-group-text" for="inputFile">Выбрать</label>
+    </div>
+    <p class="text-secondary" id="labelFile"></p>
+
+    <div class="input-group mb-1">
+        <label class="input-group-text" for="inputDate">Начальная дата приемки:</label>
+        <input type="date" class="form-control" id="inputDate"  placeholder="Recipient's username" aria-label="Recipient's username" aria-describedby="button-addon2">
+    </div>
+    <p class="text-secondary" id="labelDate"></p>
+
+    <button class="col-md-6 btn btn-outline-primary mb-3" type="button" id="readButton" disabled>Прочитать файл</button>
+    <button class="col-md-6 btn btn-danger" type="button" id="sendButton" hidden>Отправить данные на сервер</button>
+
+    <p class="text-dark" id="labelResult"></p>
+
+    <!-- кнопка ВВЕРХ -->
+    {% include 'inc/go_to_top_button.html' %}
+</main>
+
+
+{% include 'inc/footer.html' %}
+
+<script src='{% static "scripts/loadDatabase.js" %}' ></script>
+
+{% endblock %}

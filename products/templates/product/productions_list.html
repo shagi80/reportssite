@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% include 'inc/staff_navbar.html' %}
+
+
+<div class="container">
+    <main>
+        <div class="row py-4 justify-content-between">
+            <div class="col-11"><h3>{{ title }}</h3></div>
+            <div class="col-1">
+                {% if request.user.is_staff %}
+                <a class="btn btn-primary" href="{% url 'products_loading_page' %}" role="button">Добавить</a>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="row g-5">
+            <div class="col-lg-4  order-lg-last">
+                <h4 class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-primary">Найдено организаций</span>
+                    <span class="badge bg-primary rounded-pill">{{ obj_count }}</span>
+                </h4>
+                <form class="card p-2" method="get">
+                    <div class="row mb-3">
+                        <label class="col-xl-4 col-form-label">Поиск</label>
+                        <div class="col-xl-8">
+                            {{ form.filter }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-xl-4 col-form-label">Регион</label>
+                        <div class="col-xl-8">
+                            {{ form.region }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-xl-4">Менеджер</label>
+                        <div class="col-xl-8">
+                            {{ form.staff_user }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <label class="col-xl-6 form-check-label">Только активные</label>
+                        <div class="col-xl-6">
+                            {{ form.active_only }}
+                        </div>
+                    </div>
+                    <div class="container d-flex justify-content-center gap-2">
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="bi bi-search"></i>
+                            выбрать
+                        </button>
+                        <a class="btn btn-outline-primary" href="{% url 'centres_list_page' %}" role="button">
+                            <i class="bi bi-x-lg"></i>
+                            сбросить
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="col-lg-8  d-grid gap-1">
+                {% if records %}
+                {% for record in records %}
+                    <div class="row">
+                        <div class="col-3">{{ record.date }}</div>
+                        <div class="col-2">{{ record.type_pk }}</div>
+                        <div class="col-6">{{ record.code }}</div>
+                        <div class="col-1">{{ record.shop }}</div>
+                    </div>
+                {% endfor %}
+                {% else %}
+                <h4 class="text-center text-muted">Ничего не найдено ...</h4>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- кнопка ВВЕРХ !-->
+        {% include 'inc/go_to_top_button.html' %}
+    </main>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

@@ -1,0 +1,10 @@
+<div class="row g-1">
+    {% for part in parts %}
+    <label class="col-xl-8">{{ part.title|truncatewords:5 }}</label>
+    {% if part.price and part.price != 0 %}
+    <label class="col-xl-4">{{ part.count }} X {{ part.price }}</label>
+    {% else %}
+    <label class="col-xl-4">{{ part.count }} шт</label>
+    {% endif %}
+    {% endfor %}
+</div>

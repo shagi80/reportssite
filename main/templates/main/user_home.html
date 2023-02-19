@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+
+{% block title %}
+    {{ block.super }}|Главная
+{% endblock %}
+
+{% block content %}
+{% include 'inc/user_navbar.html' %}
+
+<div class="container py-4">
+
+    <div class="row mb-3 justify-content-between">
+        <div class="col-md-6">
+            <h4>Ваши отчеты:</h4>
+        </div>
+        <div class="col-md-6 text-end">
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                Добавить отчет
+            </button>
+            <!-- Modal -->
+            <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addModalLabel">Добавление отчета</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="POST" action="{% url 'report-add' %}">
+                            {% csrf_token %}
+                            <div class="modal-body">
+                                <div class="row g-2 text-start">
+                                    <div class="col-xl-4">Отчетный период:</div>
+                                    <div class="col-md-5">{{ rep_form.month }}</div>
+                                    <div class="col-md-3">{{ rep_form.year }}</div>
+                                    <div class="col-xl-4">Примечание:</div>
+                                    <div class="col-md-8">{{ rep_form.note }}</div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary btn-sm">Добавить</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row px-3">
+        {% if reports %}
+        {% for report in page_obj %}
+        <div class="row mb-2">
+            {% show_report_header report False %}
+        </div>
+        {% endfor %}
+        {% else%}
+        <label class="col-sm-12 text-center"><h5 class="text-muted">Отчетов нет ..</h5></label>
+        {% endif %}
+    </div>
+    {% include 'inc/list_paginator.html' %}
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

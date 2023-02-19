@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+
+{% block title %}
+    {{ block.super }}|Главная
+{% endblock %}
+
+{% block content %}
+<div id="TopLevel"></div>
+{% if request.user.is_staff %}
+    {% include 'inc/staff_navbar.html' %}
+{% else %}
+    {% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<main class="container col-10 py-4 d-flex flex-column align-items-center">
+    <div class="d-flex flex-wrap justify-content-center">
+        <div class="p-4">
+            <h3 class="col-12 align-items-center">Основной функционал с сайта</h3>
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/b36prDfsOHw" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h3 class="col-12 align-items-center">Добавление отчета</h3>
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/-_ghBxhsI-8" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h3 class="col-12 align-items-center">Проверка записи о ремонте</h3>
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/9U2ZZbzRx90" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+        <div class="p-4">
+            <h3 class="col-12 align-items-center">Возврат отчета на доработку</h3>
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/Rtck_wNbqek" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+        </div>
+    </div>
+    
+    <!-- кнопка ВВЕРХ -->
+    {% include 'inc/go_to_top_button.html' %}
+</main>
+
+{% include 'inc/footer.html' %}
+{% endblock %}

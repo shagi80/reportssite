@@ -1,0 +1,512 @@
+{% extends 'base.html' %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|{{ title }}
+{% endblock %}
+
+{% block content %}
+{% if request.user.is_staff %}
+    {% include 'inc/staff_navbar.html' %}
+{% else %}
+    {% include 'inc/user_navbar.html' %}
+{% endif %}
+
+<div class="container col-lg-12">
+    <div class="row pt-3">
+        <div class="col-sm-12">
+            <h3>
+                {{ title }}
+                {% if request.user.is_staff %}
+                <label class="text-primary">{{ report.service_center }}</label>
+                {% endif %}
+                <label class="text-primary"> за {{ report.report_date|date:"F Y"|lower }}</label>
+            </h3>
+        </div>
+    </div>
+
+    <div class="row pb-2">
+        <div class="col-lg-7">
+            {% if request.user.is_staff or report.status == 'refinement' %}
+            {% if record.verified %}
+            <i class="bi bi-check-square-fill text-success"></i>
+            <strong class="m-2">принят</strong>
+            {% else %}
+            <i class="bi bi-square text-danger"></i>
+            <strong class="m-2">не принят</strong>
+            {% endif %}
+            {% endif %}
+        </div>
+        <div class="col-lg-5 text-end">
+            {% if record.report.status == 'received' or record.report.status == 'verified' %}
+                {% if request.user.is_staff and not record.verified %}
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#remarksModal">
+                    <i class="bi bi-exclamation-circle"></i>  Замечание
+                </button>
+                <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{% url 'record-remarks' %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="remarksModalLabel">Записать замечание к ремонту ?</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-start">
+                                    <label class="fw-bold">Введите текст:</label>
+                                    <textarea class="form-control" rows=3 name="remarks"></textarea>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-danger btn-sm" name="save" value="{{ record.pk }}">Записать</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#acceptModal">
+                    <i class="bi bi-check-square"></i>  Принять
+                </button>
+                <div class="modal fade" id="acceptModal" tabindex="-1" aria-labelledby="acceptModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{% url 'record-verified' %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="acceptModalLabel">Принять ремонт ?</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary btn-sm" name="save" value="{{ record.pk }}">Принять</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+            {% if record.pk %}
+                <a href="{% url 'report_page' report.pk %}#record-{{record.pk}}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i>  Закрыть</a>
+            {% else %}
+                <a href="{% url 'report_page' report.pk %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i>  Закрыть</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if record.errors %}
+    <div class="row mt-2">
+         <div class="col-12">
+             <i class="bi bi-exclamation-square-fill text-warning"></i><strong class="px-3">{{ record.errors }}</strong>
+         </div>
+    </div>
+    {% endif %}
+
+    {% if record.remarks %}
+        {% if request.user.is_staff %}
+        <div class="row mt-1">
+         <div class="col-12">
+             <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3 text-danger">{{ record.remarks }}</strong>
+         </div>
+    </div>
+        {% elif report.status == 'refinement' %}
+        <div class="row mt-1">
+             <div class="col-12">
+                 <i class="bi bi-exclamation-square-fill text-danger"></i><strong class="px-3 text-danger">{{ record.remarks }}</strong>
+             </div>
+        </div>
+        {% endif %}
+    {% endif %}
+
+    {% if request.user.is_staff %}
+        {% if record.errors or record.remarks %}
+        <hr>
+        {% endif %}
+    {% endif %}
+
+    <form method="post" id="recordForm" data-codes-url="{% url 'ajax_load_codes' %}" data-models-url="{% url 'ajax_load_models' %}" data-work-price-url="{% url 'ajax_load_work-price' %}" novalidate>
+        {% csrf_token %}
+        {{ form.report }}
+
+        <!-- Окно некритичных ошибок -->
+        {% if form.errors.errors %}
+        <div class="modal fade" id="warningModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="false">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title  text-danger" id="warningModalLabel"><strong>Внимание !</strong></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul>
+                            {% for error in form.errors.errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                        <button type="submit" class="btn btn-primary" name="save_with_warning">Записать как есть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <label class="form-label"><strong>Вид ремонта:</strong>
+                    {% if form.work_type.errors %}
+                    {% show_record_form_field_errors form.work_type.errors %}
+                    {% endif %}
+                </label>
+                {{ form.work_type }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" style="strong: true"><strong>Вид продукции:</strong>
+                    {% if form.product.errors %}
+                    {% show_record_form_field_errors form.product.errors %}
+                    {% endif %}
+                </label>
+                {{ form.product }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label"><strong>Модель продукции:</strong>
+                    {% if form.model_description.errors %}
+                    {% show_record_form_field_errors form.model_description.errors %}
+                    {% endif %}
+                </label>
+                {{ form.model }}
+                {{ form.model_description }}
+            </div>
+            <div class="col-md-3">
+                <label class="form-label"><strong>Серийный номер</strong>
+                    {% if form.serial_number.errors %}
+                    {% show_record_form_field_errors form.serial_number.errors %}
+                    {% endif %}
+                </label>
+                {{ form.serial_number }}
+            </div>
+        </div>
+
+        <div class="row mt-2">
+            <div class="col-lg-8">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="col-sm-12 col-form-label" style="strong: true"><strong>Клиент:</strong>
+                            {% if form.client.errors %}
+                            {% show_record_form_field_errors form.client.errors %}
+                            {% endif %}
+                        </label>
+                        <div class="row mb-1">
+                            <label class="col-sm-3 text-muted">ФИО</label>
+                            <div class="col-sm-9">{{ form.client }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-3 text-muted">телефон</label>
+                            <div class="col-sm-9">{{ form.client_phone }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-3 text-muted">адрес</label>
+                            <div class="col-sm-9">{{ form.client_addr }}</div>
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="col-sm-12 col-form-label" style="strong: true"><strong>Даты:</strong>
+                            {% if form.buy_date.errors %}
+                            {% show_record_form_field_errors form.buy_date.errors %}
+                            {% endif %}
+                        </label>
+                        <div class="row mb-1">
+                            <label class="col-sm-7 text-muted">покупки</label>
+                            <div class="col-sm-5">{{ form.buy_date }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-7 text-muted">начала ремонта</label>
+                            <div class="col-sm-5">{{ form.start_date }}</div>
+                        </div>
+                        <div class="row mb-1">
+                            <label class="col-sm-7 text-muted">окончания ремонта</label>
+                            <div class="col-sm-5">{{ form.end_date }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row g-1">
+                    <label class="col-sm-12 col-form-label" style="strong: true"><strong>Неисправность:</strong>
+                        {% if form.code.errors %}
+                        {% show_record_form_field_errors form.code.errors %}
+                        {% elif form.problem_description.errors %}
+                        {% show_record_form_field_errors form.problem_description.errors %}
+                        {% endif %}
+                    </label>
+                    <div class="col-md-2">
+                        <label class="col-sm-12 text-muted" style="strong: true">описание</label>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.problem_description }}
+                    </div>
+                    <div class="col-md-2">
+                        <label class="col-sm-12 text-muted" style="strong: true">код</label>
+                    </div>
+                    <div class="col-md-9">
+                        {{ form.code }}
+                    </div>
+                </div>
+                <div class="row g-1">
+                    <label class="col-sm-12 col-form-label" style="strong: true"><strong>Выполенные работы:</strong>
+                        {% if form.work_description.errors %}
+                        {% show_record_form_field_errors form.work_description.errors %}
+                        {% endif %}
+                    </label>
+                    <div class="col-md-11">
+                        {{ form.work_description }}
+                    </div>
+                </div>
+                <div class="row g-1">
+                    <label class="col-lg-12 col-form-label" style="strong: true"><strong>Затраты:</strong>
+                        {% if form.work_cost.errors %}
+                        {% show_record_form_field_errors form.work_cost.errors %}
+                        {% endif %}
+                    </label>
+                    <label class="col-lg-2 text-muted" style="strong: true">за работы</label>
+                    <div class="col-lg-2">
+                        {{ form.work_cost }}
+                    </div>
+                    <div class="col-lg-3"></div>
+                    <label class="col-lg-2 text-muted" style="strong: true">за детали</label>
+                    <div class="col-lg-2">
+                        <input type="text" class="form-control form-control-sm" id="parts_cost" value="0" disabled>
+                        {{ form.parts_cost }}
+                    </div>
+                    <label class="col-lg-2 text-muted" style="strong: true">за выезд</label>
+                    <div class="col-lg-2">
+                        {{ form.move_cost }}
+                    </div>
+                    <div class="col-lg-3"></div>
+                    <label class="col-lg-2 text-muted" style="strong: true">всего</label>
+                    <div class="col-lg-2">
+                        <input type="text" class="form-control form-control-sm" id="total_cost" value="0,0" disabled>
+                        {{ form.total_cost }}
+                    </div>
+                </div>
+                <div class="row g-1">
+                    <label class="col-lg-11 col-form-label" style="strong: true"><strong>Примечание:</strong></label>
+                    <div class="col-md-11">
+                        {{ form.note }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-4" id="parts_container">
+                <div class="row">
+                    <label class="col-sm-6 col-form-label" style="strong: true"><strong>Датали:</strong>
+                    {% if form.parts_cost.errors %}
+                    {% show_record_form_field_errors form.parts_cost.errors %}
+                    {% endif %}
+                    </label>
+                    <div class="col-md-6 align-self-end text-end">
+                        {% if record.report.status == 'draft' or record.report.status == 'refinement' or not request.user.is_staff %}
+                        <button type="button" id="AddPart" class="btn btn-outline-secondary btn-sm"><i class="bi bi-plus-lg"></i></button>
+                        {% endif %}
+                    </div>
+                </div>
+                {{ parts_formset.management_form }}
+                {% for part in parts_formset %}
+                {{ part.id }}
+                <div class="parts_form">
+                    <div class="row g-1 py-3">
+                        <div class="col-sm-2">Деталь:</div><div class="col-sm-10">{{ part.title }}</div>
+                        <div class="col-sm-2">Кол:</div><div class="col-sm-4">{{ part.count }}</div>
+                        <div class="col-sm-2">Цена:</div><div class="col-sm-4">{{ part.price }}</div>
+                        <div class="col-sm-2">Док-т:</div><div class="col-sm-10">{{ part.document }}</div>
+                        <div class="col-sm-6">Удалить при записи</div><div class="col-sm-2">{{ part.DELETE }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-lg-2">
+                {% if can_edit %}
+                    {% if form.instance and form.instance.pk and form.instance.report.status != 'refinement' %}
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delete">Удалить</button>
+                    <!-- Окно подтверждения удаления записи -->
+                    <div class="modal fade" id="delete" tabindex="-1" aria-labelledby="deleteLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteLabel">Вы уверенны, что хотите удалить эту запись ?</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-footer text-center">
+                                    <a href="{% url 'record_delete' form.instance.pk %}" class="btn btn-danger btn-sm" tabindex="-1" role="button" aria-disabled="true">Удалить</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="col-lg-10 text-end g-2">
+                {% if can_edit %}
+                    {% if form.instance and form.instance.pk %}
+                    <button type="submit" class="btn btn-primary" name="save"><i class="bi bi-save"></i>  Записать и продолжить</button>
+                    {% else %}
+                    <button type="submit" class="btn btn-primary" name="close"><i class="bi bi-save"></i>  Записать и добавить еще</button>
+                    {% endif %}
+                {% endif %}
+                <a href="{% url 'report_page' report.pk %}" class="btn btn-outline-secondary"><i class="bi bi-x-lg"></i>  Закрыть</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+
+{% include 'inc/footer.html' %}
+
+<!-- AJAX скрип для динамического изменения списков без перезагрузки страницы --!>
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    //выбор виджете выбора модели - Select или Char
+    function HideModelWgt(){
+          if($("#id_model").find('option').length>1){
+            $("#id_model").prop("hidden", false)
+            if("{{ can_edit }}" == "True"){$("#id_model").prop("disabled", false);}
+            $("#id_model_description").prop("hidden", true)
+            $("#id_model_description").val("")
+            }
+            else {
+            $("#id_model").prop("hidden", true)
+            $("#id_model").prop("disabled", true)
+            $("#id_model_description").prop("hidden", false)
+            }
+    }
+
+    //управление доступностью виджета даты покупки в зависимости от типа ремонта
+    function SetNuyDateWgt(){
+        var val = $("#id_work_type").val();
+        if(val == "pretrading"){
+            $("#id_buy_date").prop("disabled", true)
+            $("#id_buy_date").val(null)
+            }
+            else{
+                if("{{ can_edit }}" == "True"){$("#id_buy_date").prop("disabled", false)};
+                }
+    }
+
+    //подсчет общей суммы
+    function CalkTotalCost(){
+        var work = $("#id_work_cost").val();
+        var move = $("#id_move_cost").val();
+        var parts = $("#parts_cost").val();
+        var sum = Number(work) + Number(move) + Number(parts);
+        $("#id_total_cost").val(Number(sum));
+        $("#total_cost").val(Number(sum));
+    }
+
+    //подсчет общей стоимости деталей
+    function CalkPartsTotalCost(){
+        var sum = 0;
+        var form_count = $("#id_parts_formset-TOTAL_FORMS").val();
+        for (let i = 0; i < form_count; i++) {
+            sum = sum + Number($("#id_parts_formset-"+String(i)+"-price").val()) *
+                Number($("#id_parts_formset-"+String(i)+"-count").val());
+        };
+        $("#id_parts_cost").val(Number(sum));
+        $("#parts_cost").val(Number(sum));
+        CalkTotalCost();
+    }
+
+    //добавление событий к полям формсета по аттрибуту "data-counter"
+    document.addEventListener('change', function(event) {
+        if (event.target.dataset.counter != undefined) {
+            CalkPartsTotalCost();
+        }
+    });
+
+    //действия после рендеринга страницы
+    $(document).ready(function() {
+        var codeId = $("#id_code").val();
+        var productId = $("#id_product").val();
+        var url1 = $("#recordForm").attr("data-codes-url");
+        if(productId>0){
+            $.ajax({
+                url: url1,
+                data: {'product': productId, 'code': codeId},
+                success: function (data) {$("#id_code").html(data);}
+            });
+        HideModelWgt();
+        CalkPartsTotalCost();
+        SetNuyDateWgt();
+        $('#warningModal').modal('show');
+        }
+    });
+
+    //заполнение Select-ов выбора модели и кода в зависимости от типа продукции
+    $("#id_product").change(function () {
+      var url1 = $("#recordForm").attr("data-codes-url");
+      var url2 = $("#recordForm").attr("data-models-url");
+      var productId = $(this).val();
+
+      $.ajax({
+        url: url1,
+        data: {'product': productId},
+        success: function (data) {$("#id_code").html(data);}
+      });
+
+      $.ajax({
+        url: url2,
+        data: {'product': productId},
+        success: function (data) {$("#id_model").html(data); HideModelWgt();}
+      });
+
+      $("#id_work_cost").val(Number('0'));
+
+    });
+
+    //подключение событий к полям ввода сумм
+    $("#id_work_cost").change(function () {CalkTotalCost();});
+    $("#id_move_cost").change(function () {CalkTotalCost();});
+
+    //подключение события к полю выбора типа ремонта
+    $("#id_work_type").change(function () {SetNuyDateWgt();});
+
+    //клонирование последней формы формсета
+    $("#AddPart").click(function (e){
+        e.preventDefault()
+        var form_count = $("#id_parts_formset-TOTAL_FORMS").val();
+        let formRegex = RegExp("parts_formset-(\\d){1}-","g")
+
+        $("#parts_container").append($("div.parts_form:last").html().replace(formRegex, "parts_formset-"+String(form_count)+"-"));
+        $("#id_parts_formset-TOTAL_FORMS").val(parseInt(form_count) + 1);
+        var res_count = $("#id_parts_formset-TOTAL_FORMS").val();
+
+    });
+
+    //запретить отпраку формы нажатием Enter
+    $(document).ready(function() {
+        $(window).keydown(function(event){
+            if(event.keyCode == 13) {
+                event.preventDefault();
+                return false;
+            }
+        });
+    });
+
+    //установка цены в зависимости от выбранного кода
+    $("#id_code").change(function () {
+      var url1 = $("#recordForm").attr("data-work-price-url");
+      var codeId = $(this).val();
+      var reportId = $("#id_report").val();
+
+      $.ajax({
+        url: url1,
+        data: {'code': codeId, 'report':reportId},
+        success: function (data) {$("#id_work_cost").val(Number(data));CalkTotalCost();}
+      });
+
+    });
+
+ </script>
+
+
+{% endblock %}

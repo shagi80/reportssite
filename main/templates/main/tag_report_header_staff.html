@@ -1,0 +1,185 @@
+{% load my_tags %}
+<div class="card mt-2 border bg-light">
+    <div class="card-body ">
+        <div class="row py-1 border border-secondary">
+            <div class="col-lg-10">
+                <h5>
+                    {{ report.service_center }} за {{ report.report_date|date:"F Y"|lower}}
+                </h5>
+            </div>
+            <div class="col-lg-2 text-end">
+                {% if can_edit %}
+                <a href="{% url 'report_page' report.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></i></a>
+                {% endif %}
+                {% if not report.status == 'accepted' %}
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#documentModal_{{ report.pk }}">
+                    <i class="bi bi-file-earmark-text"></i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="row mt-1">
+            <div class="col-lg-6">
+                <!--Статус отчета-->
+                <div class="col-12 mb-3">
+                    {% if report.status == 'draft' %}
+                    <h5 class="text-muted">{{ report.get_status_display }}</h5>
+                    {% elif report.status == 'refinement' %}
+                    <h5 class="text-danger">{{ report.get_status_display }}</h5>
+                    {% elif report.status == 'send' %}
+                    <h5 class="text-warning">{{ report.get_status_display }}</h5>
+                    {% elif report.status == 'received' %}
+                    <h5 class="text-warning">
+                        {{ report.get_status_display }}
+                        <label class="text-dark">( {{ report|show_verified_proc }}% )</label>
+                    </h5>
+                    {% elif report.status == 'verified' or report.status == 'accepted' %}
+                    <h5 class="text-info">{{ report.get_status_display }}</h5>
+                    {% else %}
+                    <h5 class="text-success">{{ report.get_status_display }}</h5>
+                    {% endif %}
+                </div>
+                <!--Примечание-->
+                {% if report.note %}
+                <div class="col-12">
+                    <i class="bi bi-info-square"></i><label class="px-3">{{ report.note }}</label>
+                </div>
+                {% endif %}
+                <!--Флаг записей с ошибками-->
+                {% if report.have_fault %}
+                <div class="col-12">
+                    <i class="bi bi-exclamation-square-fill text-warning"></i><strong class="px-3">есть записи с ошибками !</strong>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-lg-3">
+                Ремонты: {{ report.records_count }}<br>
+                За работы: {{ report.total_work }} руб<br>
+                За детали: {{ report.total_part }} руб<br>
+                За выезд: {{ report.total_move }} руб<br>
+                <h6>Итого: {{ report.total_cost }} руб</h6>
+            </div>
+            <div class="col-lg-3 text-end">
+                {% if not report.status == 'payment' and not report.status == 'refinement' and not report.status == 'received' %}
+                <button style="width:100%;display:block;" type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#statusModal_{{ report.pk }}">
+                    {% if report.status == 'draft' %}
+                    На проверку
+                    {% elif report.status == 'send' %}
+                    Начать проверку
+                    {% elif report.status == 'verified' %}
+                    Принять отчет
+                    {% elif report.status == 'accepted' %}
+                    В оплату
+                    {% endif %}
+                </button>
+                {% endif %}
+                <!--{% if report.status == 'received' or report.status == 'verified' %}-->
+                <button style="width:100%;display:block;margin-top:10px" type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#refinementModal_{{ report.pk }}">
+                    Вернуть на доработку
+                </button>
+                <!--{% endif %}-->
+            </div>
+            <!--
+            {% if report.invoice or report.act or report.mail_date %}
+                {% if report.invoice %}
+                    <div class="col-lg-4">
+                        <label class="text-secondary">Счет:</label>{{ report.invoice }}
+                    </div>
+                {% endif %}
+                {% if report.act %}
+                    <div class="col-lg-4">
+                        <label class="text-secondary">Акт:</label>{{ report.act }}
+                    </div>
+                {% endif %}
+                {% if report.mail_date %}
+                    <div class="col-lg-4">
+                        <label class="text-secondary">Дата получения почты:</label>{{ report.mail_date|date:"j F Y" }}
+                    </div>
+                {% endif %}
+            {% elif not report.status == 'accepted' or not report.status == 'payment' %}
+                <label class="text-muted">Платежные документы не поступали</label>
+            {% endif %}
+            -->
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="statusModal_{{ report.pk }}" tabindex="-1" aria-labelledby="statusModalLabel_{{ report.pk }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="statusModalLabel_{{ report.pk }}">Изменить статус отчета ?</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-start">
+                                {{ report.service_center }} за {{ report.report_date|date:"F Y"|lower}}
+                            </div>
+                            <div class="modal-footer">
+                                <form method="POST" action="{% url 'report-change-status' %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-primary btn-sm" name="{{ report.status }}" value="{{ report.pk }}">Выполнить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    <div class="modal fade" id="refinementModal_{{ report.pk }}" tabindex="-1" aria-labelledby="refinementModalLabel_{{ report.pk }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <form method="POST" action="{% url 'report-change-status' %}">
+                            {% csrf_token %}
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title text-danger" id="refinementModalLabel_{{ report.pk }}">Отправить отчет на доработку ?</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-start">
+                                    {{ report.service_center }} за {{ report.report_date|date:"F Y"|lower}}
+                                    <label class="mt-2 fw-bold">Сообщение пользователю:</label>
+                                    <textarea class="form-control" rows=4 name="message"></textarea>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary btn-sm" name="send_refinement" value="{{ report.pk }}">Выполнить</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+    <div class="modal fade" id="documentModal_{{ report.pk }}" tabindex="-1" aria-labelledby="documentModalLabel_{{ report.pk }}" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <form method="POST" action="{% url 'report-save-document' %}">
+                                {% csrf_token %}
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="documentModalLabel_{{ report.pk }}">Запись данных о бухгалтерских документах</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-start">
+                                    {{ report.service_center }} за {{ report.report_date|date:"F Y"|lower}}
+                                    <div class="row mt-2 align-items-center">
+                                        <label class="col-2">Счет:</label>
+                                        <div class="col-10">
+                                            <input type="Text" class="form-control form-control-sm" name="invoice" value="{{ report.invoice }}">
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2 align-items-center">
+                                        <label class="col-2">Акт:</label>
+                                        <div class="col-10">
+                                            <input type="Text" class="form-control form-control-sm" name="act" value="{{ report.act }}">
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2 align-items-center">
+                                        <label class="col-6">Дата поступления почты:</label>
+                                        <div class="col-4">
+                                            <input type="Date" class="form-control form-control-sm" name="mail_date" value="{{ report.mail_date }}">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-primary btn-sm" name="save" value="{{ report.pk }}">Записать</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+</div>

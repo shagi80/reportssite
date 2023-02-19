@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load my_tags %}
+
+{% block title %}
+    {{ block.super }}|Главная
+{% endblock %}
+
+{% block content %}
+{% include 'inc/staff_navbar.html' %}
+
+<div class="container pt-4">
+    <div class="row justify-content-between">
+        <div class="col-lg-7">
+            <h4>Новые отчеты:</h4>
+            {% if reports %}
+                {% for report in reports %}
+                {% show_report_header_for_staff report true %}
+                {% endfor %}
+            {% else %}
+                <div class="row mt-5 text-center">
+                    <h4 class="text-muted">Новых отчетов нет ...</h4>
+                </div>
+                <div class="row mt-5 justify-content-center">
+                    <div class="col-4 text-center">
+                        <a class="btn btn-secondary" href="{% url 'reports_list' %}" role="button" aria-disabled="true">
+                            <i class="bi bi-card-list"></i>   Все отчеты
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        <div class="col-lg-5 border">
+            <div class="row py-3 justify-content-between">
+                <div class="col"><h4>Последние изменения данных</h4> </div>
+                <div class="col-auto">
+                    <a class="btn btn-secondary" href="{% url 'logs_page' %}" role="button" aria-disabled="true"><i class="bi bi-card-list"></i></a>
+                </div>
+            </div>
+            {% for action in staff_actions %}
+            {% show_log action %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% include 'inc/footer.html' %}
+{% endblock %}
